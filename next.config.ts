@@ -3,7 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
-    agentFeedback: true,
+    // agentFeedback: true,
+    allowedDevOrigins: true,
   },
   cacheComponents: true,
   partialPrefetching: true,
