@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { Product } from '@/lib/types'
+import '@/app/estoque/estoque.css'
 
 type FilterType = 'todos' | 'insumo' | 'revenda' | 'critico'
 type InputUnit = 'g' | 'kg' | 'ml' | 'l' | 'un'
@@ -271,7 +273,6 @@ export default function EstoquePage() {
     )
   }
 
-  // Prévia do Novo Produto
   const newProductPreview = useMemo(() => {
     const rawStock = parsePtNumber(newStockInput)
     const rawMin = parsePtNumber(newMinStockInput)
@@ -296,7 +297,6 @@ export default function EstoquePage() {
     }
   }, [newStockInput, newMinStockInput, newInputUnit, newBaseUnit, newPriceMode, newPriceInput])
 
-  // Salvar novo produto
   async function handleCreateProduct(e: React.FormEvent) {
     e.preventDefault()
     if (!newName.trim()) return
@@ -355,7 +355,6 @@ export default function EstoquePage() {
     loadProducts()
   }
 
-  // Abrir modal de remoção com itens selecionados (ou o primeiro se nenhum estiver marcado)
   function openDeleteModal() {
     if (selectedIds.length > 0) {
       setDeleteTargetIds(selectedIds)
@@ -368,7 +367,6 @@ export default function EstoquePage() {
     setShowDeleteModal(true)
   }
 
-  // Remover 1 ou vários produtos
   async function handleRemoveProducts(e: React.FormEvent) {
     e.preventDefault()
     if (deleteTargetIds.length === 0) return
@@ -422,7 +420,6 @@ export default function EstoquePage() {
     loadProducts()
   }
 
-  // Resgatar produtos ocultos (active = true)
   async function handleRestoreProducts(e: React.FormEvent) {
     e.preventDefault()
     if (restoreSelectedIds.length === 0) return
@@ -449,7 +446,6 @@ export default function EstoquePage() {
     loadProducts()
   }
 
-  // Prévia da Compra
   const purchasePreview = useMemo(() => {
     if (!purchaseProduct) return null
     const baseUnit = purchaseProduct.unit as 'g' | 'ml' | 'un'
@@ -473,7 +469,6 @@ export default function EstoquePage() {
     purchasePriceInput,
   ])
 
-  // Salvar compra
   async function handleSavePurchase(e: React.FormEvent) {
     e.preventDefault()
     if (!purchaseProduct || !purchasePreview) return
@@ -523,7 +518,6 @@ export default function EstoquePage() {
     loadProducts()
   }
 
-  // Salvar ajuste ou perda
   async function handleSaveAdjust(e: React.FormEvent) {
     e.preventDefault()
     if (!adjustProduct) return
@@ -581,20 +575,38 @@ export default function EstoquePage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 p-4 md:p-8 text-stone-800">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="estoque-page">
+      <div className="estoque-container">
+        {/* Navegação rápida da marca */}
+        <div className="estoque-topbar">
+          <div className="estoque-brand">
+            <span className="estoque-brand-dot" />
+            <span className="estoque-brand-name">WI CAKES</span>
+            <span className="estoque-brand-sub">
+              • Bolos · Doces · Salgados · Pizzas
+            </span>
+          </div>
+
+          <nav className="estoque-nav">
+            <Link href="/estoque" className="estoque-nav-link estoque-nav-link--active">
+              Estoque
+            </Link>
+            <Link href="/receitas" className="estoque-nav-link">
+              Receitas
+            </Link>
+          </nav>
+        </div>
+
         {/* Cabeçalho */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="estoque-header">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-stone-900">
-              Controle de Estoque
-            </h1>
-            <p className="text-sm text-stone-500 mt-1">
+            <h1 className="estoque-title">Controle de Estoque</h1>
+            <p className="estoque-subtitle">
               Informe quantidades em kg/g, L/ml ou un e escolha informar o valor total ou o preço por kg/L.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="estoque-actions">
             <button
               onClick={() => {
                 setNewBaseUnit('g')
@@ -602,7 +614,7 @@ export default function EstoquePage() {
                 setNewPriceMode('total')
                 setShowNewModal(true)
               }}
-              className="inline-flex items-center justify-center rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 transition cursor-pointer"
+              className="btn btn-primary"
             >
               + Novo Produto
             </button>
@@ -610,7 +622,7 @@ export default function EstoquePage() {
             <button
               onClick={openDeleteModal}
               disabled={products.length === 0}
-              className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm hover:bg-red-50 disabled:opacity-40 transition cursor-pointer"
+              className="btn btn-danger-outline"
             >
               {selectedIds.length > 0
                 ? `Remover Produto (${selectedIds.length})`
@@ -623,7 +635,7 @@ export default function EstoquePage() {
                 setShowRestoreModal(true)
               }}
               disabled={hiddenProducts.length === 0}
-              className="inline-flex items-center justify-center rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 shadow-sm hover:bg-stone-100 disabled:opacity-40 transition cursor-pointer"
+              className="btn btn-gold-outline"
             >
               Resgatar Ocultos ({hiddenProducts.length})
             </button>
@@ -631,74 +643,58 @@ export default function EstoquePage() {
         </div>
 
         {/* Alertas */}
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-        {successMsg && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-            {successMsg}
-          </div>
-        )}
+        {error && <div className="alert alert-error">{error}</div>}
+        {successMsg && <div className="alert alert-success">{successMsg}</div>}
 
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
-              Itens Ativos
-            </p>
-            <p className="mt-2 text-2xl font-bold text-stone-900">{summary.totalItems}</p>
-            <p className="mt-1 text-xs text-stone-400">Insumos e produtos de revenda</p>
+        <div className="estoque-summary-grid">
+          <div className="summary-card">
+            <p className="summary-label">Itens Ativos</p>
+            <p className="summary-value">{summary.totalItems}</p>
+            <p className="summary-helper">Insumos e produtos de revenda</p>
           </div>
 
           <div
             onClick={() => setFilterType(filterType === 'critico' ? 'todos' : 'critico')}
-            className={`rounded-xl border p-5 shadow-sm transition cursor-pointer ${
-              summary.criticalItems > 0
-                ? 'border-red-200 bg-red-50/60 hover:bg-red-50'
-                : 'border-stone-200 bg-white hover:bg-stone-50'
+            className={`summary-card summary-card--clickable ${
+              summary.criticalItems > 0 ? 'summary-card--critical' : ''
             }`}
           >
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
-              Abaixo / No Mínimo
-            </p>
+            <p className="summary-label">Abaixo / No Mínimo</p>
             <p
-              className={`mt-2 text-2xl font-bold ${
-                summary.criticalItems > 0 ? 'text-red-600' : 'text-emerald-600'
+              className={`summary-value ${
+                summary.criticalItems > 0 ? 'summary-value--alert' : 'summary-value--ok'
               }`}
             >
               {summary.criticalItems}
             </p>
-            <p className="mt-1 text-xs text-stone-500">
+            <p className="summary-helper">
               {summary.criticalItems > 0
                 ? 'Clique para filtrar itens críticos'
                 : 'Nenhum item em alerta no momento'}
             </p>
           </div>
 
-          <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
-              Valor Total em Estoque
-            </p>
-            <p className="mt-2 text-2xl font-bold text-stone-900">
+          <div className="summary-card summary-card--gold">
+            <p className="summary-label">Valor Total em Estoque</p>
+            <p className="summary-value summary-value--gold">
               {formatBRL(summary.totalValue)}
             </p>
-            <p className="mt-1 text-xs text-stone-400">Baseado no custo médio atual</p>
+            <p className="summary-helper">Baseado no custo médio atual</p>
           </div>
         </div>
 
         {/* Busca e Filtros */}
-        <div className="flex flex-col md:flex-row gap-3 justify-between bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+        <div className="estoque-toolbar">
           <input
             type="text"
             placeholder="Buscar produto por nome (ex: calabresa, mussarela)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full md:w-80 rounded-lg border border-stone-300 px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none"
+            className="estoque-search"
           />
 
-          <div className="flex flex-wrap gap-2">
+          <div className="estoque-filters">
             {(
               [
                 { id: 'todos', label: 'Todos' },
@@ -710,11 +706,7 @@ export default function EstoquePage() {
               <button
                 key={tab.id}
                 onClick={() => setFilterType(tab.id)}
-                className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition cursor-pointer ${
-                  filterType === tab.id
-                    ? 'bg-stone-900 text-white'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                }`}
+                className={`filter-btn ${filterType === tab.id ? 'filter-btn--active' : ''}`}
               >
                 {tab.label}
               </button>
@@ -723,40 +715,42 @@ export default function EstoquePage() {
         </div>
 
         {/* Tabela de Produtos */}
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+        <div className="estoque-table-card">
           {loading ? (
-            <div className="p-8 text-center text-sm text-stone-500">Carregando estoque...</div>
+            <div className="estoque-empty">
+              <p className="estoque-empty-sub">Carregando estoque...</p>
+            </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="p-10 text-center space-y-2">
-              <p className="text-base font-medium text-stone-700">Nenhum produto encontrado</p>
-              <p className="text-sm text-stone-500">
+            <div className="estoque-empty">
+              <p className="estoque-empty-title">Nenhum produto encontrado</p>
+              <p className="estoque-empty-sub">
                 Cadastre um novo produto no botão acima, resgate um item oculto ou limpe os filtros.
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="estoque-table-wrap">
+              <table className="estoque-table">
                 <thead>
-                  <tr className="border-b border-stone-200 bg-stone-50 text-xs font-semibold uppercase text-stone-500">
-                    <th className="py-3.5 pl-4 pr-2 w-10">
+                  <tr>
+                    <th className="col-check">
                       <input
                         type="checkbox"
                         checked={allFilteredSelected}
                         onChange={toggleSelectAllFiltered}
                         title="Selecionar todos"
-                        className="h-4 w-4 rounded border-stone-300 cursor-pointer"
+                        className="checkbox-wicakes"
                       />
                     </th>
-                    <th className="py-3.5 px-4">Produto</th>
-                    <th className="py-3.5 px-4">Tipo</th>
-                    <th className="py-3.5 px-4">Estoque Atual</th>
-                    <th className="py-3.5 px-4">Mínimo</th>
-                    <th className="py-3.5 px-4">Custo Médio</th>
-                    <th className="py-3.5 px-4">Valor em Estoque</th>
-                    <th className="py-3.5 px-4 text-right">Ações</th>
+                    <th>Produto</th>
+                    <th>Tipo</th>
+                    <th>Estoque Atual</th>
+                    <th>Mínimo</th>
+                    <th>Custo Médio</th>
+                    <th>Valor em Estoque</th>
+                    <th className="col-actions">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-stone-100 text-sm">
+                <tbody>
                   {filteredProducts.map((product) => {
                     const current = Number(product.current_stock)
                     const min = Number(product.min_stock)
@@ -764,73 +758,60 @@ export default function EstoquePage() {
                     const isCritical = current <= min
                     const isSelected = selectedIds.includes(product.id)
 
+                    const rowClass = isSelected
+                      ? 'row--selected'
+                      : isCritical
+                      ? 'row--critical'
+                      : ''
+
                     return (
-                      <tr
-                        key={product.id}
-                        className={
-                          isSelected
-                            ? 'bg-amber-50/70'
-                            : isCritical
-                            ? 'bg-red-50/50'
-                            : 'hover:bg-stone-50/80'
-                        }
-                      >
-                        <td className="py-3.5 pl-4 pr-2">
+                      <tr key={product.id} className={rowClass}>
+                        <td className="col-check">
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleSelectProduct(product.id)}
-                            className="h-4 w-4 rounded border-stone-300 cursor-pointer"
+                            className="checkbox-wicakes"
                           />
                         </td>
 
-                        <td className="py-3.5 px-4">
-                          <div className="font-semibold text-stone-900">{product.name}</div>
+                        <td>
+                          <div className="product-name">{product.name}</div>
                           {product.notes && (
-                            <div className="text-xs text-stone-400">{product.notes}</div>
+                            <div className="product-notes">{product.notes}</div>
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td>
                           <span
-                            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            className={`badge-type ${
                               product.type === 'insumo'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-sky-100 text-sky-800'
+                                ? 'badge-type--insumo'
+                                : 'badge-type--revenda'
                             }`}
                           >
                             {product.type === 'insumo' ? 'Insumo' : 'Revenda'}
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td>
                           <div
-                            className={`font-semibold ${
-                              isCritical ? 'text-red-600' : 'text-stone-900'
-                            }`}
+                            className={`stock-qty ${isCritical ? 'stock-qty--critical' : ''}`}
                           >
                             {formatFriendlyStock(current, product.unit)}
                           </div>
                           {isCritical && (
-                            <span className="inline-block mt-0.5 text-[11px] font-semibold text-red-600">
-                              Repor estoque
-                            </span>
+                            <span className="stock-alert-tag">Repor estoque</span>
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4 text-stone-600">
-                          {formatFriendlyStock(min, product.unit)}
-                        </td>
+                        <td>{formatFriendlyStock(min, product.unit)}</td>
 
-                        <td className="py-3.5 px-4 text-stone-700">
-                          {formatFriendlyCost(avgCost, product.unit)}
-                        </td>
+                        <td>{formatFriendlyCost(avgCost, product.unit)}</td>
 
-                        <td className="py-3.5 px-4 font-medium text-stone-900">
-                          {formatBRL(current * avgCost)}
-                        </td>
+                        <td className="stock-value">{formatBRL(current * avgCost)}</td>
 
-                        <td className="py-3.5 px-4 text-right space-x-2 whitespace-nowrap">
+                        <td className="col-actions">
                           <button
                             onClick={() => {
                               const base = product.unit as 'g' | 'ml' | 'un'
@@ -841,7 +822,7 @@ export default function EstoquePage() {
                               setPurchasePriceInput('')
                               setPurchaseNotes('')
                             }}
-                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition cursor-pointer"
+                            className="btn btn-sm-primary"
                           >
                             + Compra
                           </button>
@@ -854,7 +835,7 @@ export default function EstoquePage() {
                               setAdjustQtyInput('')
                               setAdjustNotes('')
                             }}
-                            className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+                            className="btn btn-sm-gold"
                           >
                             Ajuste / Perda
                           </button>
@@ -871,40 +852,38 @@ export default function EstoquePage() {
 
       {/* MODAL 1: NOVO PRODUTO */}
       {showNewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-stone-900">Cadastrar Novo Produto</h2>
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h2 className="modal-title">Cadastrar Novo Produto</h2>
               <button
                 onClick={() => setShowNewModal(false)}
-                className="text-stone-400 hover:text-stone-700 text-sm font-semibold cursor-pointer"
+                className="modal-close"
               >
                 Fechar
               </button>
             </div>
 
-            <form onSubmit={handleCreateProduct} className="space-y-3.5">
+            <form onSubmit={handleCreateProduct} className="modal-form">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Nome do Produto *
-                </label>
+                <label className="form-label">Nome do Produto *</label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: Calabresa, Mussarela, Coca-Cola Lata"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                  className="form-control"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="form-grid-3">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">Tipo *</label>
+                  <label className="form-label">Tipo *</label>
                   <select
                     value={newType}
                     onChange={(e) => setNewType(e.target.value as 'insumo' | 'revenda')}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   >
                     <option value="insumo">Insumo</option>
                     <option value="revenda">Revenda</option>
@@ -912,9 +891,7 @@ export default function EstoquePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Medida no Sistema *
-                  </label>
+                  <label className="form-label">Medida no Sistema *</label>
                   <select
                     value={newBaseUnit}
                     onChange={(e) => {
@@ -925,7 +902,7 @@ export default function EstoquePage() {
                         setNewPriceMode('total')
                       }
                     }}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   >
                     <option value="g">Peso (g / kg)</option>
                     <option value="ml">Volume (ml / L)</option>
@@ -934,13 +911,11 @@ export default function EstoquePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Digitar Qtd em *
-                  </label>
+                  <label className="form-label">Digitar Qtd em *</label>
                   <select
                     value={newInputUnit}
                     onChange={(e) => setNewInputUnit(e.target.value as InputUnit)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   >
                     {getAllowedInputUnits(newBaseUnit).map((u) => (
                       <option key={u} value={u}>
@@ -959,9 +934,9 @@ export default function EstoquePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="form-grid-2">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="form-label">
                     Quantidade Inicial ({newInputUnit})
                   </label>
                   <input
@@ -972,12 +947,12 @@ export default function EstoquePage() {
                     }
                     value={newStockInput}
                     onChange={(e) => setNewStockInput(e.target.value)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="form-label">
                     Estoque Mínimo ({newInputUnit})
                   </label>
                   <input
@@ -986,20 +961,18 @@ export default function EstoquePage() {
                     placeholder={newInputUnit === 'kg' ? 'Ex: 1,5' : 'Ex: 5'}
                     value={newMinStockInput}
                     onChange={(e) => setNewMinStockInput(e.target.value)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="form-grid-2">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Como informar o valor? *
-                  </label>
+                  <label className="form-label">Como informar o valor? *</label>
                   <select
                     value={newPriceMode}
                     onChange={(e) => setNewPriceMode(e.target.value as PriceMode)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   >
                     <option value="total">Valor total pago (R$)</option>
                     {(newBaseUnit === 'g' || newBaseUnit === 'ml') && (
@@ -1012,7 +985,7 @@ export default function EstoquePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="form-label">
                     {newPriceMode === 'total'
                       ? 'Valor Total Pago (R$)'
                       : newPriceMode === 'per_kilo_or_liter'
@@ -1027,14 +1000,14 @@ export default function EstoquePage() {
                     }
                     value={newPriceInput}
                     onChange={(e) => setNewPriceInput(e.target.value)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   />
                 </div>
               </div>
 
               {newProductPreview.initialStockBase > 0 && (
-                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-950 space-y-1">
-                  <div className="font-semibold">Cálculo automático do cadastro:</div>
+                <div className="preview-box">
+                  <strong>Cálculo automático do cadastro:</strong>
                   <div>
                     • Estoque salvo:{' '}
                     <strong>
@@ -1055,30 +1028,28 @@ export default function EstoquePage() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Observações (opcional)
-                </label>
+                <label className="form-label">Observações (opcional)</label>
                 <input
                   type="text"
                   placeholder="Ex: Peças fracionadas, pacote fechado..."
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                  className="form-control"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="modal-footer">
                 <button
                   type="button"
                   onClick={() => setShowNewModal(false)}
-                  className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 cursor-pointer"
+                  className="btn btn-secondary"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={savingNew}
-                  className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50 cursor-pointer"
+                  className="btn btn-primary"
                 >
                   {savingNew ? 'Salvando...' : 'Salvar Produto'}
                 </button>
@@ -1090,22 +1061,22 @@ export default function EstoquePage() {
 
       {/* MODAL REMOVER PRODUTO (1 OU VÁRIOS) */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-stone-900">Remover Produto(s)</h2>
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h2 className="modal-title">Remover Produto(s)</h2>
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="text-stone-400 hover:text-stone-700 text-sm font-semibold cursor-pointer"
+                className="modal-close"
               >
                 Fechar
               </button>
             </div>
 
-            <form onSubmit={handleRemoveProducts} className="space-y-3.5">
+            <form onSubmit={handleRemoveProducts} className="modal-form">
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-stone-700">
+                <div className="modal-header">
+                  <label className="form-label">
                     Produtos selecionados para remoção ({deleteTargetIds.length}) *
                   </label>
                   <button
@@ -1117,7 +1088,7 @@ export default function EstoquePage() {
                           : products.map((p) => p.id)
                       )
                     }
-                    className="text-xs font-semibold text-amber-700 hover:underline cursor-pointer"
+                    className="modal-close"
                   >
                     {deleteTargetIds.length === products.length
                       ? 'Desmarcar todos'
@@ -1125,15 +1096,12 @@ export default function EstoquePage() {
                   </button>
                 </div>
 
-                <div className="max-h-48 overflow-y-auto rounded-lg border border-stone-200 divide-y divide-stone-100">
+                <div className="checklist-box">
                   {products.map((p) => {
                     const checked = deleteTargetIds.includes(p.id)
                     return (
-                      <label
-                        key={p.id}
-                        className="flex items-center justify-between px-3 py-2 text-sm hover:bg-stone-50 cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5">
+                      <label key={p.id} className="checklist-item">
+                        <div className="checklist-left">
                           <input
                             type="checkbox"
                             checked={checked}
@@ -1144,11 +1112,11 @@ export default function EstoquePage() {
                                   : [...prev, p.id]
                               )
                             }
-                            className="h-4 w-4 rounded border-stone-300 cursor-pointer"
+                            className="checkbox-wicakes"
                           />
-                          <span className="font-medium text-stone-800">{p.name}</span>
+                          <span className="product-name">{p.name}</span>
                         </div>
-                        <span className="text-xs text-stone-500">
+                        <span className="product-notes">
                           {formatFriendlyStock(Number(p.current_stock), p.unit)}
                         </span>
                       </label>
@@ -1158,13 +1126,11 @@ export default function EstoquePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Forma de Remoção
-                </label>
+                <label className="form-label">Forma de Remoção</label>
                 <select
                   value={deleteMode}
                   onChange={(e) => setDeleteMode(e.target.value as 'inativar' | 'excluir')}
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                  className="form-control"
                 >
                   <option value="inativar">
                     Ocultar / Preservar histórico (pode ser resgatado depois)
@@ -1173,18 +1139,18 @@ export default function EstoquePage() {
                 </select>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="modal-footer">
                 <button
                   type="button"
                   onClick={() => setShowDeleteModal(false)}
-                  className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 cursor-pointer"
+                  className="btn btn-secondary"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={deletingProduct || deleteTargetIds.length === 0}
-                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 cursor-pointer"
+                  className="btn btn-danger-solid"
                 >
                   {deletingProduct
                     ? 'Removendo...'
@@ -1198,52 +1164,47 @@ export default function EstoquePage() {
 
       {/* MODAL RESGATAR PRODUTOS OCULTOS */}
       {showRestoreModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
               <div>
-                <h2 className="text-lg font-bold text-stone-900">Resgatar Produtos Ocultos</h2>
-                <p className="text-xs text-stone-500">
+                <h2 className="modal-title">Resgatar Produtos Ocultos</h2>
+                <p className="modal-subtitle">
                   Itens ocultados mantêm seu estoque e histórico intactos.
                 </p>
               </div>
               <button
                 onClick={() => setShowRestoreModal(false)}
-                className="text-stone-400 hover:text-stone-700 text-sm font-semibold cursor-pointer"
+                className="modal-close"
               >
                 Fechar
               </button>
             </div>
 
-            <form onSubmit={handleRestoreProducts} className="space-y-3.5">
+            <form onSubmit={handleRestoreProducts} className="modal-form">
               {hiddenProducts.length === 0 ? (
-                <p className="text-sm text-stone-500 py-4 text-center">
-                  Não há produtos ocultos no momento.
-                </p>
+                <p className="estoque-empty-sub">Não há produtos ocultos no momento.</p>
               ) : (
-                <div className="max-h-56 overflow-y-auto rounded-lg border border-stone-200 divide-y divide-stone-100">
+                <div className="checklist-box">
                   {hiddenProducts.map((p) => {
                     const checked = restoreSelectedIds.includes(p.id)
                     return (
-                      <label
-                        key={p.id}
-                        className="flex items-center justify-between px-3 py-2 text-sm hover:bg-stone-50 cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5">
+                      <label key={p.id} className="checklist-item">
+                        <div className="checklist-left">
                           <input
                             type="checkbox"
                             checked={checked}
                             onChange={() => toggleSelectRestore(p.id)}
-                            className="h-4 w-4 rounded border-stone-300 cursor-pointer"
+                            className="checkbox-wicakes"
                           />
                           <div>
-                            <div className="font-medium text-stone-800">{p.name}</div>
-                            <div className="text-xs text-stone-400">
+                            <div className="product-name">{p.name}</div>
+                            <div className="product-notes">
                               Custo: {formatFriendlyCost(Number(p.average_cost), p.unit)}
                             </div>
                           </div>
                         </div>
-                        <span className="text-xs font-medium text-stone-600">
+                        <span className="product-notes">
                           {formatFriendlyStock(Number(p.current_stock), p.unit)}
                         </span>
                       </label>
@@ -1252,18 +1213,18 @@ export default function EstoquePage() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="modal-footer">
                 <button
                   type="button"
                   onClick={() => setShowRestoreModal(false)}
-                  className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 cursor-pointer"
+                  className="btn btn-secondary"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={restoringProducts || restoreSelectedIds.length === 0}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
+                  className="btn btn-primary"
                 >
                   {restoringProducts
                     ? 'Resgatando...'
@@ -1277,22 +1238,22 @@ export default function EstoquePage() {
 
       {/* MODAL 2: REGISTRAR COMPRA */}
       {purchaseProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
               <div>
-                <h2 className="text-lg font-bold text-stone-900">Registrar Compra</h2>
-                <p className="text-xs text-stone-500">{purchaseProduct.name}</p>
+                <h2 className="modal-title">Registrar Compra</h2>
+                <p className="modal-subtitle">{purchaseProduct.name}</p>
               </div>
               <button
                 onClick={() => setPurchaseProduct(null)}
-                className="text-stone-400 hover:text-stone-700 text-sm font-semibold cursor-pointer"
+                className="modal-close"
               >
                 Fechar
               </button>
             </div>
 
-            <div className="rounded-lg bg-stone-50 border border-stone-200 p-3 text-xs text-stone-600 space-y-1">
+            <div className="preview-box preview-box--wine">
               <div>
                 Estoque atual:{' '}
                 <strong>
@@ -1310,12 +1271,10 @@ export default function EstoquePage() {
               </div>
             </div>
 
-            <form onSubmit={handleSavePurchase} className="space-y-3.5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <form onSubmit={handleSavePurchase} className="modal-form">
+              <div className="form-grid-2">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Quantidade Comprada *
-                  </label>
+                  <label className="form-label">Quantidade Comprada *</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -1329,18 +1288,16 @@ export default function EstoquePage() {
                     }
                     value={purchaseQtyInput}
                     onChange={(e) => setPurchaseQtyInput(e.target.value)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Unidade Digitada *
-                  </label>
+                  <label className="form-label">Unidade Digitada *</label>
                   <select
                     value={purchaseInputUnit}
                     onChange={(e) => setPurchaseInputUnit(e.target.value as InputUnit)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   >
                     {getAllowedInputUnits(purchaseProduct.unit as 'g' | 'ml' | 'un').map((u) => (
                       <option key={u} value={u}>
@@ -1359,15 +1316,13 @@ export default function EstoquePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="form-grid-2">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Como informar o valor? *
-                  </label>
+                  <label className="form-label">Como informar o valor? *</label>
                   <select
                     value={purchasePriceMode}
                     onChange={(e) => setPurchasePriceMode(e.target.value as PriceMode)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   >
                     <option value="total">Valor total da compra (R$)</option>
                     {(purchaseProduct.unit === 'g' || purchaseProduct.unit === 'ml') && (
@@ -1382,7 +1337,7 @@ export default function EstoquePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="form-label">
                     {purchasePriceMode === 'total'
                       ? 'Valor Total Pago (R$) *'
                       : purchasePriceMode === 'per_kilo_or_liter'
@@ -1398,14 +1353,14 @@ export default function EstoquePage() {
                     }
                     value={purchasePriceInput}
                     onChange={(e) => setPurchasePriceInput(e.target.value)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   />
                 </div>
               </div>
 
               {purchasePreview && (
-                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-900 space-y-1">
-                  <div className="font-semibold">Prévia após salvar:</div>
+                <div className="preview-box">
+                  <strong>Prévia após salvar:</strong>
                   <div>
                     • Entrada no estoque:{' '}
                     <strong>
@@ -1432,30 +1387,28 @@ export default function EstoquePage() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Observação / Fornecedor (opcional)
-                </label>
+                <label className="form-label">Observação / Fornecedor (opcional)</label>
                 <input
                   type="text"
                   placeholder="Ex: Peças 4,5kg + 4,2kg, Atacadão..."
                   value={purchaseNotes}
                   onChange={(e) => setPurchaseNotes(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                  className="form-control"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="modal-footer">
                 <button
                   type="button"
                   onClick={() => setPurchaseProduct(null)}
-                  className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 cursor-pointer"
+                  className="btn btn-secondary"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={savingPurchase || !purchasePreview}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
+                  className="btn btn-primary"
                 >
                   {savingPurchase ? 'Registrando...' : 'Confirmar Entrada'}
                 </button>
@@ -1467,31 +1420,29 @@ export default function EstoquePage() {
 
       {/* MODAL 3: AJUSTE OU PERDA */}
       {adjustProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="modal-backdrop">
+          <div className="modal-card modal-card--sm">
+            <div className="modal-header">
               <div>
-                <h2 className="text-lg font-bold text-stone-900">Ajuste / Perda de Estoque</h2>
-                <p className="text-xs text-stone-500">{adjustProduct.name}</p>
+                <h2 className="modal-title">Ajuste / Perda de Estoque</h2>
+                <p className="modal-subtitle">{adjustProduct.name}</p>
               </div>
               <button
                 onClick={() => setAdjustProduct(null)}
-                className="text-stone-400 hover:text-stone-700 text-sm font-semibold cursor-pointer"
+                className="modal-close"
               >
                 Fechar
               </button>
             </div>
 
-            <form onSubmit={handleSaveAdjust} className="space-y-3.5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <form onSubmit={handleSaveAdjust} className="modal-form">
+              <div className="form-grid-2">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Tipo de Movimentação
-                  </label>
+                  <label className="form-label">Tipo de Movimentação</label>
                   <select
                     value={adjustType}
                     onChange={(e) => setAdjustType(e.target.value as 'ajuste' | 'perda')}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   >
                     <option value="perda">Perda / Descarte</option>
                     <option value="ajuste">Ajuste (+ ou -)</option>
@@ -1499,13 +1450,11 @@ export default function EstoquePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Unidade Digitada
-                  </label>
+                  <label className="form-label">Unidade Digitada</label>
                   <select
                     value={adjustInputUnit}
                     onChange={(e) => setAdjustInputUnit(e.target.value as InputUnit)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="form-control"
                   >
                     {getAllowedInputUnits(adjustProduct.unit as 'g' | 'ml' | 'un').map((u) => (
                       <option key={u} value={u}>
@@ -1517,9 +1466,7 @@ export default function EstoquePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Quantidade ({adjustInputUnit}) *
-                </label>
+                <label className="form-label">Quantidade ({adjustInputUnit}) *</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -1531,33 +1478,33 @@ export default function EstoquePage() {
                   }
                   value={adjustQtyInput}
                   onChange={(e) => setAdjustQtyInput(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                  className="form-control"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">Motivo</label>
+                <label className="form-label">Motivo</label>
                 <input
                   type="text"
                   placeholder="Ex: Apara/sobra, contagem física..."
                   value={adjustNotes}
                   onChange={(e) => setAdjustNotes(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                  className="form-control"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="modal-footer">
                 <button
                   type="button"
                   onClick={() => setAdjustProduct(null)}
-                  className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 cursor-pointer"
+                  className="btn btn-secondary"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={savingAdjust}
-                  className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-800 disabled:opacity-50 cursor-pointer"
+                  className="btn btn-primary"
                 >
                   {savingAdjust ? 'Salvando...' : 'Registrar'}
                 </button>

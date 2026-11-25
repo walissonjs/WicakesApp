@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { Product } from '@/lib/types'
+import '@/app/receitas/receitas.css'
 
 interface Recipe {
   id: string
@@ -61,7 +63,7 @@ export default function ReceitasPage() {
   const [ingredientInputUnit, setIngredientInputUnit] = useState<'base' | 'kg_or_l'>('base')
   const [savingIngredient, setSavingIngredient] = useState(false)
 
-  // Simulador de Preço de Venda (inspirado na aba Cardápio)
+  // Simulador de Preço de Venda
   const [markupMultiplier, setMarkupMultiplier] = useState('2')
   const [targetSalePrice, setTargetSalePrice] = useState('25,00')
 
@@ -147,7 +149,6 @@ export default function ReceitasPage() {
     return map
   }, [products])
 
-  // Calcula custo total de cada receita para exibir na lista lateral
   const recipeCostsMap = useMemo(() => {
     const map = new Map<string, number>()
     recipes.forEach((r) => map.set(r.id, 0))
@@ -207,7 +208,6 @@ export default function ReceitasPage() {
     [productMap, selectedProductId]
   )
 
-  // Abrir modal para criar receita
   function openNewRecipeModal() {
     setEditingRecipe(null)
     setRecipeName('')
@@ -217,7 +217,6 @@ export default function ReceitasPage() {
     setShowRecipeModal(true)
   }
 
-  // Abrir modal para editar receita atual
   function openEditRecipeModal(recipe: Recipe) {
     setEditingRecipe(recipe)
     setRecipeName(recipe.name)
@@ -227,7 +226,6 @@ export default function ReceitasPage() {
     setShowRecipeModal(true)
   }
 
-  // Salvar nova receita ou edição
   async function handleSaveRecipe(e: React.FormEvent) {
     e.preventDefault()
     if (!recipeName.trim()) return
@@ -287,7 +285,6 @@ export default function ReceitasPage() {
     loadAllData()
   }
 
-  // Duplicar receita selecionada (ideal para variações de sabores)
   async function handleDuplicateRecipe() {
     if (!selectedRecipe) return
 
@@ -336,7 +333,6 @@ export default function ReceitasPage() {
     loadAllData()
   }
 
-  // Inativar receita
   async function handleArchiveRecipe() {
     if (!selectedRecipe) return
     const confirmed = window.confirm(
@@ -359,7 +355,6 @@ export default function ReceitasPage() {
     loadAllData()
   }
 
-  // Adicionar ou atualizar ingrediente na ficha técnica
   async function handleAddIngredient(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedRecipe || !selectedInputProduct) return
@@ -418,7 +413,6 @@ export default function ReceitasPage() {
     loadAllData()
   }
 
-  // Remover ingrediente da ficha técnica
   async function handleRemoveIngredient(ingredientId: string) {
     const { error: deleteError } = await supabase
       .from('recipe_ingredients')
@@ -435,7 +429,6 @@ export default function ReceitasPage() {
     loadAllData()
   }
 
-  // Cálculos da simulação de preço (como na aba Cardápio)
   const pricingSimulation = useMemo(() => {
     const mult = Math.max(1, parsePtNumber(markupMultiplier) || 2)
     const sale = Math.max(0, parsePtNumber(targetSalePrice) || 0)
@@ -452,74 +445,77 @@ export default function ReceitasPage() {
   }, [costPerYieldUnit, markupMultiplier, targetSalePrice])
 
   return (
-    <div className="min-h-screen bg-stone-50 p-4 md:p-8 text-stone-800">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="receitas-page">
+      <div className="receitas-container">
+        {/* Navegação rápida da marca */}
+        <div className="receitas-topbar">
+          <div className="receitas-brand">
+            <span className="receitas-brand-dot" />
+            <span className="receitas-brand-name">WI CAKES</span>
+            <span className="receitas-brand-sub">
+              • Bolos · Doces · Salgados · Pizzas
+            </span>
+          </div>
+
+          <nav className="receitas-nav">
+            <Link href="/estoque" className="receitas-nav-link">
+              Estoque
+            </Link>
+            <Link href="/receitas" className="receitas-nav-link receitas-nav-link--active">
+              Receitas
+            </Link>
+          </nav>
+        </div>
+
         {/* Cabeçalho */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="receitas-header">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-stone-900">
-              Receitas & Ficha Técnica
-            </h1>
-            <p className="text-sm text-stone-500 mt-1">
+            <h1 className="receitas-title">Receitas & Ficha Técnica</h1>
+            <p className="receitas-subtitle">
               Monte a composição de cada item produzido com custo puxado automaticamente do estoque.
             </p>
           </div>
 
-          <button
-            onClick={openNewRecipeModal}
-            className="inline-flex items-center justify-center rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 transition cursor-pointer"
-          >
+          <button onClick={openNewRecipeModal} className="rc-btn rc-btn-primary">
             + Nova Receita
           </button>
         </div>
 
         {/* Alertas */}
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-        {successMsg && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-            {successMsg}
-          </div>
-        )}
+        {error && <div className="rc-alert rc-alert--error">{error}</div>}
+        {successMsg && <div className="rc-alert rc-alert--success">{successMsg}</div>}
 
         {loading ? (
-          <div className="rounded-xl border border-stone-200 bg-white p-10 text-center text-sm text-stone-500">
-            Carregando receitas e insumos...
+          <div className="ficha-card">
+            <p className="rc-empty-text">Carregando receitas e insumos...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="receitas-grid">
             {/* COLUNA ESQUERDA: LISTA DE RECEITAS */}
-            <div className="lg:col-span-4 rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-stone-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold uppercase tracking-wide text-stone-600">
-                    Receitas ({recipes.length})
-                  </h2>
-                </div>
+            <div className="receitas-sidebar receitas-list-card">
+              <div className="receitas-list-header">
+                <h2 className="receitas-list-heading">Receitas ({recipes.length})</h2>
                 <input
                   type="text"
                   placeholder="Buscar receita (ex: 3 Queijos, Calabresa)..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+                  className="receitas-search"
                 />
               </div>
 
               {filteredRecipes.length === 0 ? (
-                <div className="p-6 text-center text-sm text-stone-500 space-y-2">
-                  <p>Nenhuma receita encontrada.</p>
+                <div className="rc-empty-box">
+                  <p className="rc-empty-text">Nenhuma receita encontrada.</p>
                   <button
                     onClick={openNewRecipeModal}
-                    className="text-amber-700 font-semibold hover:underline cursor-pointer"
+                    className="rc-btn rc-btn-sm-gold rc-empty-cta"
                   >
                     Criar primeira receita
                   </button>
                 </div>
               ) : (
-                <div className="divide-y divide-stone-100 max-h-[65vh] overflow-y-auto">
+                <div className="receitas-items">
                   {filteredRecipes.map((recipe) => {
                     const isSelected = recipe.id === selectedRecipeId
                     const cost = recipeCostsMap.get(recipe.id) || 0
@@ -530,27 +526,19 @@ export default function ReceitasPage() {
                       <button
                         key={recipe.id}
                         onClick={() => setSelectedRecipeId(recipe.id)}
-                        className={`w-full text-left px-4 py-3.5 transition cursor-pointer flex items-center justify-between gap-2 ${
-                          isSelected
-                            ? 'bg-amber-50 border-l-4 border-amber-600'
-                            : 'hover:bg-stone-50'
+                        className={`receita-row-btn ${
+                          isSelected ? 'receita-row-btn--active' : ''
                         }`}
                       >
                         <div>
-                          <div className="font-semibold text-stone-900 text-sm">
-                            {recipe.name}
-                          </div>
-                          <div className="text-xs text-stone-500">
+                          <div className="receita-row-name">{recipe.name}</div>
+                          <div className="receita-row-yield">
                             Rende: {formatNumber(y)} {recipe.yield_unit}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-stone-900">
-                            {formatBRL(unitCost)}
-                          </div>
-                          <div className="text-[11px] text-stone-400">
-                            por {recipe.yield_unit}
-                          </div>
+                        <div className="receita-row-cost-wrap">
+                          <div className="receita-row-cost">{formatBRL(unitCost)}</div>
+                          <div className="receita-row-unit">por {recipe.yield_unit}</div>
                         </div>
                       </button>
                     )
@@ -560,61 +548,57 @@ export default function ReceitasPage() {
             </div>
 
             {/* COLUNA DIREITA: FICHA TÉCNICA DA RECEITA SELECIONADA */}
-            <div className="lg:col-span-8 space-y-6">
+            <div className="receitas-main">
               {!selectedRecipe ? (
-                <div className="rounded-xl border border-stone-200 bg-white p-10 text-center space-y-3 shadow-sm">
-                  <p className="text-base font-semibold text-stone-800">
-                    Nenhuma receita selecionada
-                  </p>
-                  <p className="text-sm text-stone-500">
+                <div className="ficha-card rc-empty-box">
+                  <p className="rc-empty-title">Nenhuma receita selecionada</p>
+                  <p className="rc-empty-text">
                     Crie uma nova receita (ex.: 3 Queijos, Calabresa, Massa de Pizza) para começar a montar sua ficha técnica.
                   </p>
-                  <button
-                    onClick={openNewRecipeModal}
-                    className="inline-flex items-center justify-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 cursor-pointer"
-                  >
-                    + Criar Receita
-                  </button>
+                  <div>
+                    <button
+                      onClick={openNewRecipeModal}
+                      className="rc-btn rc-btn-primary rc-empty-cta"
+                    >
+                      + Criar Receita
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
                   {/* Cabeçalho da Receita + Resumo de Custos */}
-                  <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm space-y-5">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                  <div className="ficha-card">
+                    <div className="ficha-header">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-xl font-bold text-stone-900">
-                            {selectedRecipe.name}
-                          </h2>
-                          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                        <div className="ficha-title-row">
+                          <h2 className="ficha-title">{selectedRecipe.name}</h2>
+                          <span className="ficha-yield-badge">
                             Rende {formatNumber(Number(selectedRecipe.yield_quantity))}{' '}
                             {selectedRecipe.yield_unit}
                           </span>
                         </div>
                         {selectedRecipe.description && (
-                          <p className="text-sm text-stone-500 mt-1">
-                            {selectedRecipe.description}
-                          </p>
+                          <p className="ficha-description">{selectedRecipe.description}</p>
                         )}
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
+                      <div className="ficha-actions">
                         <button
                           onClick={() => openEditRecipeModal(selectedRecipe)}
-                          className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 cursor-pointer"
+                          className="rc-btn rc-btn-sm-gold"
                         >
                           Editar Receita
                         </button>
                         <button
                           onClick={handleDuplicateRecipe}
                           disabled={savingRecipe}
-                          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 cursor-pointer"
+                          className="rc-btn rc-btn-sm-duplicate"
                         >
                           Duplicar
                         </button>
                         <button
                           onClick={handleArchiveRecipe}
-                          className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
+                          className="rc-btn rc-btn-sm-danger"
                         >
                           Excluir
                         </button>
@@ -622,71 +606,59 @@ export default function ReceitasPage() {
                     </div>
 
                     {/* Cards de Custo & Simulador de Preço */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-stone-100">
-                      <div className="rounded-lg bg-stone-50 p-4 border border-stone-200/80">
-                        <p className="text-xs font-medium uppercase text-stone-500">
-                          Custo Total da Receita
-                        </p>
-                        <p className="mt-1 text-xl font-bold text-stone-900">
-                          {formatBRL(totalRecipeCost)}
-                        </p>
-                        <p className="text-xs text-stone-500 mt-0.5">
+                    <div className="metrics-grid">
+                      <div className="metric-box metric-box--cost">
+                        <p className="metric-label">Custo Total da Receita</p>
+                        <p className="metric-value">{formatBRL(totalRecipeCost)}</p>
+                        <p className="metric-sub">
                           Custo por {selectedRecipe.yield_unit}:{' '}
                           <strong>{formatBRL(costPerYieldUnit)}</strong>
                         </p>
                       </div>
 
-                      <div className="rounded-lg bg-amber-50/70 p-4 border border-amber-200/80">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-medium uppercase text-amber-900">
-                            Preço Sugerido
-                          </p>
-                          <div className="flex items-center gap-1 text-xs">
-                            <span className="text-amber-800">Markup:</span>
+                      <div className="metric-box metric-box--suggested">
+                        <div className="metric-top">
+                          <p className="metric-label metric-label--gold">Preço Sugerido</p>
+                          <div className="inline-sim-control">
+                            <span>Markup:</span>
                             <input
                               type="text"
                               inputMode="decimal"
                               value={markupMultiplier}
                               onChange={(e) => setMarkupMultiplier(e.target.value)}
-                              className="w-12 rounded border border-amber-300 bg-white px-1.5 py-0.5 text-center font-semibold text-stone-900"
+                              className="inline-sim-input"
                             />
-                            <span className="text-amber-800">x</span>
+                            <span>x</span>
                           </div>
                         </div>
-                        <p className="mt-1 text-xl font-bold text-amber-900">
+                        <p className="metric-value metric-value--gold">
                           {formatBRL(pricingSimulation.suggested)}
                         </p>
-                        <p className="text-xs text-amber-800 mt-0.5">
-                          Baseado no custo unitário
-                        </p>
+                        <p className="metric-sub">Baseado no custo unitário</p>
                       </div>
 
-                      <div className="rounded-lg bg-emerald-50/70 p-4 border border-emerald-200/80">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-medium uppercase text-emerald-900">
-                            Lucro Estimado
-                          </p>
-                          <div className="flex items-center gap-1 text-xs">
-                            <span className="text-emerald-800">Venda R$:</span>
+                      <div className="metric-box metric-box--profit">
+                        <div className="metric-top">
+                          <p className="metric-label metric-label--wine">Lucro Estimado</p>
+                          <div className="inline-sim-control">
+                            <span>Venda R$:</span>
                             <input
                               type="text"
                               inputMode="decimal"
                               value={targetSalePrice}
                               onChange={(e) => setTargetSalePrice(e.target.value)}
-                              className="w-16 rounded border border-emerald-300 bg-white px-1.5 py-0.5 text-right font-semibold text-stone-900"
+                              className="inline-sim-input inline-sim-input--sale"
                             />
                           </div>
                         </div>
                         <p
-                          className={`mt-1 text-xl font-bold ${
-                            pricingSimulation.profit >= 0
-                              ? 'text-emerald-700'
-                              : 'text-red-600'
+                          className={`metric-value ${
+                            pricingSimulation.profit < 0 ? 'metric-value--loss' : ''
                           }`}
                         >
                           {formatBRL(pricingSimulation.profit)}
                         </p>
-                        <p className="text-xs text-emerald-800 mt-0.5">
+                        <p className="metric-sub">
                           Margem: {formatNumber(pricingSimulation.marginPercent)}%
                         </p>
                       </div>
@@ -694,31 +666,26 @@ export default function ReceitasPage() {
                   </div>
 
                   {/* Formulário: Adicionar Ingrediente */}
-                  <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm space-y-3">
-                    <h3 className="text-sm font-bold text-stone-900">
+                  <div className="add-ing-card">
+                    <h3 className="add-ing-title">
                       Adicionar / Atualizar Ingrediente na Receita
                     </h3>
 
                     {products.length === 0 ? (
-                      <p className="text-sm text-stone-500">
+                      <p className="rc-empty-text">
                         Cadastre seus insumos primeiro na tela <strong>/estoque</strong> para adicioná-los aqui.
                       </p>
                     ) : (
-                      <form
-                        onSubmit={handleAddIngredient}
-                        className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end"
-                      >
-                        <div className="sm:col-span-5">
-                          <label className="block text-xs font-semibold text-stone-700 mb-1">
-                            Ingrediente (do Estoque)
-                          </label>
+                      <form onSubmit={handleAddIngredient} className="add-ing-form">
+                        <div className="add-ing-col-product">
+                          <label className="rc-label">Ingrediente (do Estoque)</label>
                           <select
                             value={selectedProductId}
                             onChange={(e) => {
                               setSelectedProductId(e.target.value)
                               setIngredientInputUnit('base')
                             }}
-                            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                            className="rc-control"
                           >
                             {products.map((p) => (
                               <option key={p.id} value={p.id}>
@@ -728,10 +695,8 @@ export default function ReceitasPage() {
                           </select>
                         </div>
 
-                        <div className="sm:col-span-3">
-                          <label className="block text-xs font-semibold text-stone-700 mb-1">
-                            Quantidade
-                          </label>
+                        <div className="add-ing-col-qty">
+                          <label className="rc-label">Quantidade</label>
                           <input
                             type="text"
                             inputMode="decimal"
@@ -739,20 +704,18 @@ export default function ReceitasPage() {
                             placeholder="Ex: 150 ou 1"
                             value={ingredientQtyInput}
                             onChange={(e) => setIngredientQtyInput(e.target.value)}
-                            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                            className="rc-control"
                           />
                         </div>
 
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs font-semibold text-stone-700 mb-1">
-                            Unidade
-                          </label>
+                        <div className="add-ing-col-unit">
+                          <label className="rc-label">Unidade</label>
                           <select
                             value={ingredientInputUnit}
                             onChange={(e) =>
                               setIngredientInputUnit(e.target.value as 'base' | 'kg_or_l')
                             }
-                            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                            className="rc-control"
                           >
                             <option value="base">
                               {selectedInputProduct?.unit || 'un'}
@@ -766,11 +729,11 @@ export default function ReceitasPage() {
                           </select>
                         </div>
 
-                        <div className="sm:col-span-2">
+                        <div className="add-ing-col-submit">
                           <button
                             type="submit"
                             disabled={savingIngredient}
-                            className="w-full rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
+                            className="rc-btn rc-btn-insert"
                           >
                             {savingIngredient ? '...' : '+ Inserir'}
                           </button>
@@ -780,34 +743,36 @@ export default function ReceitasPage() {
                   </div>
 
                   {/* Tabela de Ingredientes da Receita */}
-                  <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-                    <div className="px-5 py-3.5 border-b border-stone-200 bg-stone-50 flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase tracking-wide text-stone-600">
+                  <div className="comp-card">
+                    <div className="comp-header">
+                      <h3 className="comp-title">
                         Composição / Ingredientes ({selectedIngredients.length})
                       </h3>
-                      <span className="text-xs text-stone-500">
+                      <span className="comp-hint">
                         Valores atualizados pelo custo médio do estoque
                       </span>
                     </div>
 
                     {selectedIngredients.length === 0 ? (
-                      <div className="p-8 text-center text-sm text-stone-500">
-                        Nenhum ingrediente adicionado ainda. Use o formulário acima para inserir os itens desta receita.
+                      <div className="rc-empty-box">
+                        <p className="rc-empty-text">
+                          Nenhum ingrediente adicionado ainda. Use o formulário acima para inserir os itens desta receita.
+                        </p>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                      <div className="comp-table-wrap">
+                        <table className="comp-table">
                           <thead>
-                            <tr className="border-b border-stone-200 text-xs font-semibold uppercase text-stone-500">
-                              <th className="py-3 px-4">Ingrediente</th>
-                              <th className="py-3 px-4">Qtd.</th>
-                              <th className="py-3 px-4">Custo Unit. Estoque</th>
-                              <th className="py-3 px-4">Custo Parcial</th>
-                              <th className="py-3 px-4">% do Custo</th>
-                              <th className="py-3 px-4 text-right">Ação</th>
+                            <tr>
+                              <th>Ingrediente</th>
+                              <th>Qtd.</th>
+                              <th>Custo Unit. Estoque</th>
+                              <th>Custo Parcial</th>
+                              <th>% do Custo</th>
+                              <th className="col-actions">Ação</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-stone-100 text-sm">
+                          <tbody>
                             {selectedIngredients.map((item) => {
                               const share =
                                 totalRecipeCost > 0
@@ -815,30 +780,28 @@ export default function ReceitasPage() {
                                   : 0
 
                               return (
-                                <tr key={item.id} className="hover:bg-stone-50">
-                                  <td className="py-3 px-4 font-semibold text-stone-900">
+                                <tr key={item.id}>
+                                  <td className="comp-td-name">
                                     {item.product?.name || 'Produto removido'}
                                   </td>
-                                  <td className="py-3 px-4 text-stone-700">
+                                  <td className="comp-td-qty">
                                     {formatNumber(Number(item.quantity))} {item.unit}
                                   </td>
-                                  <td className="py-3 px-4 text-stone-500 text-xs">
+                                  <td className="comp-td-muted">
                                     {item.unit === 'g' || item.unit === 'ml'
                                       ? `${formatBRL(item.unitCost * 1000, 2)}/${
                                           item.unit === 'g' ? 'kg' : 'L'
                                         }`
                                       : `${formatBRL(item.unitCost, 2)}/un`}
                                   </td>
-                                  <td className="py-3 px-4 font-semibold text-stone-900">
+                                  <td className="comp-td-cost">
                                     {formatBRL(item.partialCost)}
                                   </td>
-                                  <td className="py-3 px-4 text-stone-500 text-xs">
-                                    {formatNumber(share)}%
-                                  </td>
-                                  <td className="py-3 px-4 text-right">
+                                  <td className="comp-td-muted">{formatNumber(share)}%</td>
+                                  <td className="col-actions">
                                     <button
                                       onClick={() => handleRemoveIngredient(item.id)}
-                                      className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
+                                      className="rc-btn rc-btn-sm-danger"
                                     >
                                       Remover
                                     </button>
@@ -848,14 +811,10 @@ export default function ReceitasPage() {
                             })}
                           </tbody>
                           <tfoot>
-                            <tr className="border-t-2 border-stone-200 bg-stone-50 font-bold text-stone-900 text-sm">
-                              <td className="py-3 px-4" colSpan={3}>
-                                CUSTO TOTAL DA RECEITA
-                              </td>
-                              <td className="py-3 px-4 text-amber-800">
-                                {formatBRL(totalRecipeCost)}
-                              </td>
-                              <td className="py-3 px-4 text-xs text-stone-500">100%</td>
+                            <tr>
+                              <td colSpan={3}>CUSTO TOTAL DA RECEITA</td>
+                              <td>{formatBRL(totalRecipeCost)}</td>
+                              <td className="comp-td-muted">100%</td>
                               <td />
                             </tr>
                           </tfoot>
@@ -872,40 +831,36 @@ export default function ReceitasPage() {
 
       {/* MODAL: NOVA / EDITAR RECEITA */}
       {showRecipeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-stone-900">
+        <div className="rc-modal-backdrop">
+          <div className="rc-modal-card">
+            <div className="rc-modal-header">
+              <h2 className="rc-modal-title">
                 {editingRecipe ? 'Editar Receita' : 'Nova Receita'}
               </h2>
               <button
                 onClick={() => setShowRecipeModal(false)}
-                className="text-stone-400 hover:text-stone-700 text-sm font-semibold cursor-pointer"
+                className="rc-modal-close"
               >
                 Fechar
               </button>
             </div>
 
-            <form onSubmit={handleSaveRecipe} className="space-y-3.5">
+            <form onSubmit={handleSaveRecipe} className="rc-modal-form">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Nome da Receita *
-                </label>
+                <label className="rc-label">Nome da Receita *</label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: 3 Queijos, Calabresa, Massa Pizza"
                   value={recipeName}
                   onChange={(e) => setRecipeName(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                  className="rc-control"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="rc-modal-grid-2">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Rendimento *
-                  </label>
+                  <label className="rc-label">Rendimento *</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -913,50 +868,46 @@ export default function ReceitasPage() {
                     placeholder="Ex: 1"
                     value={recipeYieldQty}
                     onChange={(e) => setRecipeYieldQty(e.target.value)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="rc-control"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Unidade de Rendimento *
-                  </label>
+                  <label className="rc-label">Unidade de Rendimento *</label>
                   <input
                     type="text"
                     required
                     placeholder="Ex: un, pizza, porção, g"
                     value={recipeYieldUnit}
                     onChange={(e) => setRecipeYieldUnit(e.target.value)}
-                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                    className="rc-control"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Descrição / Modo de Preparo (opcional)
-                </label>
+                <label className="rc-label">Descrição / Modo de Preparo (opcional)</label>
                 <textarea
                   rows={2}
                   placeholder="Ex: Pizza tamanho padrão 30cm..."
                   value={recipeDescription}
                   onChange={(e) => setRecipeDescription(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                  className="rc-control"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="rc-modal-footer">
                 <button
                   type="button"
                   onClick={() => setShowRecipeModal(false)}
-                  className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 cursor-pointer"
+                  className="rc-btn rc-btn-secondary"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={savingRecipe}
-                  className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50 cursor-pointer"
+                  className="rc-btn rc-btn-primary"
                 >
                   {savingRecipe ? 'Salvando...' : 'Salvar Receita'}
                 </button>
